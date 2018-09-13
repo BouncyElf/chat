@@ -1,0 +1,15 @@
+# Test binary, build with `go test -c`
+*.test
+
+#vim
+*~
+*.un~
+*.*[~]
+*.swp
+
+#go build
+main
+chat
+
+.DS_Store
+
