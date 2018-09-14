@@ -1,0 +1,5 @@
+# Basis
+app_name = "Chat"
+debug_mode = true
+address = "127.0.0.1:1212"
+coffer_enabled = true
