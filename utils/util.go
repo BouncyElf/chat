@@ -28,7 +28,7 @@ func Success(res *air.Response, data interface{}) error {
 	return res.JSON(ret)
 }
 
-func GetInt(req *air.Request, key string) (int, error) {
+func Int(req *air.Request, key string) (int, error) {
 	v, ok := req.Params[key]
 	if !ok {
 		return 0, errors.New("no specific key")
@@ -36,7 +36,7 @@ func GetInt(req *air.Request, key string) (int, error) {
 	return strconv.Atoi(v)
 }
 
-func GetInt64(req *air.Request, key string) (int64, error) {
+func Int64(req *air.Request, key string) (int64, error) {
 	v, ok := req.Params[key]
 	if !ok {
 		return 0, errors.New("no specific key")

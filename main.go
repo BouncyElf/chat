@@ -7,14 +7,11 @@ import (
 	"time"
 
 	"github.com/BouncyElf/chat/handlers"
-	"github.com/BouncyElf/chat/models"
+
 	"github.com/aofei/air"
 )
 
 func main() {
-
-	models.InitModel()
-
 	shutdownChan := make(chan os.Signal, 1)
 	signal.Notify(shutdownChan, os.Interrupt, syscall.SIGTERM)
 	go func() {

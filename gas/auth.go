@@ -4,8 +4,10 @@ import (
 	"errors"
 	"time"
 
+	"github.com/BouncyElf/chat/common"
 	"github.com/BouncyElf/chat/models"
 	"github.com/BouncyElf/chat/utils"
+
 	"github.com/aofei/air"
 )
 
@@ -16,41 +18,45 @@ func AuthHandler() air.Gas {
 			// 	air.INFO("debug mode, pass")
 			// 	return next(req, res)
 			// }
-			name := ""
+			sid := ""
 			cookie := &air.Cookie{}
 			for _, c := range req.Cookies {
-				if c.Name == "name" {
-					name = c.Value
+				if c.Name == common.AuthCookieName {
+					sid = c.Value
 					c.Expires = time.Now().
 						Add(7 * 24 * time.Hour)
 					cookie = c
 					break
 				}
 			}
-			if name == "" {
-				air.ERROR("name not found in cookie")
+			if sid == "" {
+				air.ERROR("sid not found in cookie")
 				if req.Method == "GET" {
-					req.URL.Path = "/"
+					req.URL.Path = "/login"
 					res.StatusCode = 302
 					return res.Redirect(req.URL.String())
 				}
 				return utils.Error(401,
-					errors.New("name not found in cookie"))
+					errors.New("sid not found in cookie"))
 			}
-			v, ok := models.GetUser(name)
+			v, ok := User(sid)
 			if !ok {
-				air.ERROR("name not found in cache")
+				air.ERROR("sid not found in cache")
 				if req.Method == "GET" {
-					req.URL.Path = "/"
+					req.URL.Path = "/login"
 					res.StatusCode = 302
 					return res.Redirect(req.URL.String())
 				}
 				return utils.Error(400,
-					errors.New("name not found in cache"))
+					errors.New("sid not found in cache"))
 			}
-			req.Params["name"] = v.Name
+			req.Params["uid"] = v.Uid
 			res.Cookies = append(res.Cookies, cookie)
 			return next(req, res)
 		}
 	}
+}
+
+func User(sid string) (models.UserInfo, bool) {
+	return models.UserInfo{}, true
 }

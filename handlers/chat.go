@@ -1,17 +1,17 @@
 package handlers
 
 import (
-	"errors"
 	"sync"
 
 	"github.com/BouncyElf/chat/gas"
 	"github.com/BouncyElf/chat/utils"
+
 	"github.com/aofei/air"
+	cmap "github.com/orcaman/concurrent-map"
 )
 
 var (
-	users map[string]*SocketManager
-	mu    = &sync.Mutex{}
+	users    = cmap.New()
 )
 
 func init() {
@@ -29,20 +29,9 @@ func socketHandler(req *air.Request, res *air.Response) error {
 	}
 	defer c.Close()
 
-	name := req.Params["name"]
-	if _, ok := users[name]; ok {
-		air.ERROR("duplicate name", utils.M{
-			"req":  req,
-			"name": name,
-		})
-		return utils.Error(400, errors.New("duplicate name"))
-	}
-
-	me := newSocketManager(name)
-	if users == nil {
-		users = make(map[string]*SocketManager)
-	}
-	users[name] = me
+	me := newSocketManager(req.Params["uid"])
+	users.Set(me.uid, me)
+	mu := &sync.Mutex{}
 
 	go func() {
 		for {
@@ -50,11 +39,10 @@ func socketHandler(req *air.Request, res *air.Response) error {
 				switch t {
 				case air.WebSocketMessageTypeText:
 					mu.Lock()
-					me.SendMsg(newMsg(name, t, b))
+					me.SendMsg(newMsg(me.uid, t, b))
 					mu.Unlock()
 				case air.WebSocketMessageTypeBinary:
 				case air.WebSocketMessageTypeConnectionClose:
-					delete(users, name)
 					me.Close()
 					return
 				}
@@ -64,7 +52,6 @@ func socketHandler(req *air.Request, res *air.Response) error {
 					"err":     err.Error(),
 					"content": string(b),
 				})
-				delete(users, name)
 				me.Close()
 				return
 			}
@@ -74,17 +61,18 @@ func socketHandler(req *air.Request, res *air.Response) error {
 	for {
 		select {
 		case <-me.newMsg:
-			if v, err := me.m.Marshal(); err == nil {
-				err = c.WriteMessage(me.m.Mtype, v)
+			if v, err := me.msg.Marshal(); err == nil {
+				err = c.WriteMessage(me.msg.MType, v)
 				if err != nil {
 					air.ERROR("send socket msg error",
 						utils.M{
-							"content": me.m,
-							"to":      me.name,
+							"content": me.msg,
+							"to":      me.uid,
 							"err":     err,
 						})
+					me.Close()
 				}
-				me.rwLock.Unlock()
+				me.mu.Unlock()
 			}
 		case <-me.shutdown:
 			break
