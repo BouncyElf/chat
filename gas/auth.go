@@ -20,43 +20,24 @@ func AuthHandler() air.Gas {
 			// }
 			sid := ""
 			cookie := &air.Cookie{}
-			for _, c := range req.Cookies {
-				if c.Name == common.AuthCookieName {
-					sid = c.Value
-					c.Expires = time.Now().
-						Add(7 * 24 * time.Hour)
-					cookie = c
-					break
-				}
-			}
-			if sid == "" {
-				air.ERROR("sid not found in cookie")
-				if req.Method == "GET" {
-					req.URL.Path = "/login"
-					res.StatusCode = 302
-					return res.Redirect(req.URL.String())
-				}
-				return utils.Error(401,
-					errors.New("sid not found in cookie"))
-			}
-			v, ok := User(sid)
+			c, ok := req.Cookies[common.AuthCookieName]
 			if !ok {
-				air.ERROR("sid not found in cache")
-				if req.Method == "GET" {
-					req.URL.Path = "/login"
-					res.StatusCode = 302
-					return res.Redirect(req.URL.String())
-				}
-				return utils.Error(400,
-					errors.New("sid not found in cache"))
+				air.ERROR("sid not found in cookie")
+				return utils.Error(401,
+					errors.New("sid not found"))
 			}
-			req.Params["uid"] = v.Uid
-			res.Cookies = append(res.Cookies, cookie)
+			sid = c.Value
+			c.Expires = time.Now().Add(7 * 24 * time.Hour)
+			cookie = c
+			v := models.GetSession(sid)
+			if v == nil {
+				air.ERROR("sid not found in session")
+				return utils.Error(401,
+					errors.New("session expired"))
+			}
+			req.Params["uid"] = v.Info.UID
+			res.Cookies[common.AuthCookieName] = cookie
 			return next(req, res)
 		}
 	}
-}
-
-func User(sid string) (models.UserInfo, bool) {
-	return models.UserInfo{}, true
 }

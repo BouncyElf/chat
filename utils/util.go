@@ -1,8 +1,9 @@
 package utils
 
 import (
-	"encoding/base64"
-	"errors"
+	"crypto/md5"
+	"encoding/hex"
+	"fmt"
 	"strconv"
 
 	"github.com/aofei/air"
@@ -28,22 +29,24 @@ func Success(res *air.Response, data interface{}) error {
 	return res.JSON(ret)
 }
 
-func Int(req *air.Request, key string) (int, error) {
+func ParseInt(req *air.Request, key string) (int, error) {
 	v, ok := req.Params[key]
 	if !ok {
-		return 0, errors.New("no specific key")
+		return 0, fmt.Errorf("no specific key: %s.", key)
 	}
 	return strconv.Atoi(v)
 }
 
-func Int64(req *air.Request, key string) (int64, error) {
+func ParseInt64(req *air.Request, key string) (int64, error) {
 	v, ok := req.Params[key]
 	if !ok {
-		return 0, errors.New("no specific key")
+		return 0, fmt.Errorf("no specific key: %s.", key)
 	}
 	return strconv.ParseInt(v, 10, 64)
 }
 
-func Base64(s string) string {
-	return base64.StdEncoding.EncodeToString([]byte(s))
+func MD5(v string) string {
+	h := md5.New()
+	h.Write([]byte(v))
+	return hex.EncodeToString(h.Sum(nil))
 }

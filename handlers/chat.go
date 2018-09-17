@@ -4,6 +4,7 @@ import (
 	"sync"
 
 	"github.com/BouncyElf/chat/gas"
+	"github.com/BouncyElf/chat/models"
 	"github.com/BouncyElf/chat/utils"
 
 	"github.com/aofei/air"
@@ -11,7 +12,7 @@ import (
 )
 
 var (
-	users    = cmap.New()
+	users = cmap.New()
 )
 
 func init() {
@@ -39,7 +40,7 @@ func socketHandler(req *air.Request, res *air.Response) error {
 				switch t {
 				case air.WebSocketMessageTypeText:
 					mu.Lock()
-					me.SendMsg(newMsg(me.uid, t, b))
+					me.SendMsg(models.NewMsg(me.uid, t, b))
 					mu.Unlock()
 				case air.WebSocketMessageTypeBinary:
 				case air.WebSocketMessageTypeConnectionClose:

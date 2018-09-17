@@ -1,12 +1,18 @@
 package handlers
 
 import (
+	"strings"
 	"sync"
+
+	"github.com/BouncyElf/chat/models"
+	"github.com/BouncyElf/chat/utils"
+
+	"github.com/aofei/air"
 )
 
 type SocketManager struct {
 	uid      string
-	msg      *Message
+	msg      *models.Message
 	newMsg   chan struct{}
 	shutdown chan struct{}
 	mu       *sync.Mutex
@@ -21,10 +27,37 @@ func newSocketManager(uid string) *SocketManager {
 	}
 }
 
-func (sm *SocketManager) SendMsg(msg *Message) {
-	for _, v := range getGroupUser(sm.msg.To) {
-		// TODO: save to db
-		if value, ok := users.Get(v.Uid); ok {
+func (sm *SocketManager) SendMsg(msg *models.Message) {
+	defer func() {
+		if sm.msg != nil {
+			go sm.msg.Save()
+		}
+	}()
+	if !IsInGroup(sm.uid, msg.To) {
+		sm.mu.Lock()
+		sm.msg = models.NewNotifyMsg(models.UserNotInGroupMsg)
+		sm.newMsg <- struct{}{}
+		air.ERROR("not in specific group", utils.M{
+			"uid":      sm.uid,
+			"group id": sm.msg.To,
+			"message":  sm.msg,
+		})
+		return
+	}
+	group := models.GetGroup(sm.msg.To)
+	if group == nil {
+		sm.mu.Lock()
+		sm.msg = models.NewNotifyMsg(models.GroupNotFoundMsg)
+		sm.newMsg <- struct{}{}
+		air.ERROR("no specific group found", utils.M{
+			"uid":      sm.uid,
+			"group id": sm.msg.To,
+			"message":  sm.msg,
+		})
+		return
+	}
+	for _, v := range strings.Split(group.UIDs, ";") {
+		if value, ok := users.Get(v); ok {
 			me := value.(*SocketManager)
 			me.mu.Lock()
 			me.msg = msg
