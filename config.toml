@@ -3,3 +3,9 @@ app_name = "Chat"
 debug_mode = true
 address = "127.0.0.1:1212"
 coffer_enabled = true
+
+[DB]
+username = "root"
+password = "123456"
+addr = "127.0.0.1:3306"
+dbname = "chat"

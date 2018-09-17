@@ -57,7 +57,7 @@ func (m *Message) Save() {
 	err := DB.Save(m).Error
 	if err != nil {
 		air.ERROR("save message to db error", utils.M{
-			"error":   err.Error(),
+			"err":   err.Error(),
 			"message": m,
 		})
 	}

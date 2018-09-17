@@ -24,8 +24,8 @@ func (u *User) Save() {
 	err := DB.Save(u).Error
 	if err != nil {
 		air.ERROR("save user to db error", utils.M{
-			"error": err.Error(),
-			"user":  u,
+			"err":  err.Error(),
+			"user": u,
 		})
 	}
 }
@@ -48,7 +48,7 @@ func (info *UserInfo) Save() {
 	err := DB.Save(info).Error
 	if err != nil {
 		air.ERROR("save userinfo to db error", utils.M{
-			"error":     err.Error(),
+			"err":       err.Error(),
 			"user info": info,
 		})
 	}
@@ -71,8 +71,25 @@ func NewUserInfo(uid string, name string) *UserInfo {
 	}
 }
 
-func GetUserInfos(uids []string) map[string]UserInfo {
-	return map[string]UserInfo{}
+func GetUserInfos(uids []string) map[string]*UserInfo {
+	userInfos := GetUserInfosSlice(uids)
+	res := map[string]*UserInfo{}
+	for _, v := range userInfos {
+		res[v.UID] = v
+	}
+	return res
+}
+
+func GetUserInfosSlice(uids []string) []*UserInfo {
+	userInfos := []*UserInfo{}
+	err := DB.Where("uid in (?)", uids).Find(&userInfos).Error
+	if err != nil {
+		air.ERROR("get user infos error", utils.M{
+			"err":  err.Error(),
+			"uids": uids,
+		})
+	}
+	return userInfos
 }
 
 func GetUserInfo(uid string) *UserInfo {
@@ -80,8 +97,8 @@ func GetUserInfo(uid string) *UserInfo {
 	err := DB.Where("uid = ?", uid).Find(res).Error
 	if err != nil {
 		air.ERROR("get userinfo from db error", utils.M{
-			"error": err.Error(),
-			"uid":   uid,
+			"err": err.Error(),
+			"uid": uid,
 		})
 		return nil
 	}
@@ -93,8 +110,8 @@ func GetUser(uid string) *User {
 	err := DB.Where("uid = ?", uid).Find(res).Error
 	if err != nil {
 		air.ERROR("get user from db error", utils.M{
-			"error": err.Error(),
-			"uid":   uid,
+			"err": err.Error(),
+			"uid": uid,
 		})
 		return nil
 	}
@@ -106,7 +123,7 @@ func GetUserByUsername(username string) *User {
 	err := DB.Where("username = ?", username).Find(res).Error
 	if err != nil {
 		air.ERROR("get user from db error", utils.M{
-			"error":    err.Error(),
+			"err":      err.Error(),
 			"username": username,
 		})
 		return nil

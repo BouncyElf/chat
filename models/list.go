@@ -6,8 +6,8 @@ import (
 )
 
 type List struct {
-	UID  string `gorm:"column:uid;primary_key"`
-	GIDs string `gorm:"column:gids"`
+	UID  string `gorm:"column:uid;primary_key" json:"uid"`
+	GIDs string `gorm:"column:gids" json:"gids"`
 }
 
 func (List) TableName() string {
@@ -18,8 +18,8 @@ func (l *List) Save() {
 	err := DB.Save(l).Error
 	if err != nil {
 		air.ERROR("save list to db error", utils.M{
-			"error": err.Error(),
-			"list":  l,
+			"err":  err.Error(),
+			"list": l,
 		})
 	}
 }
@@ -29,8 +29,8 @@ func GetList(uid string) *List {
 	err := DB.Where("uid = ?", uid).Find(res).Error
 	if err != nil {
 		air.ERROR("get list from db error", utils.M{
-			"error": err.Error(),
-			"uid":   uid,
+			"err": err.Error(),
+			"uid": uid,
 		})
 		return nil
 	}

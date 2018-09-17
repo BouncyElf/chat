@@ -19,7 +19,7 @@ func (r *Relation) Save() {
 	err := DB.Save(r).Error
 	if err != nil {
 		air.ERROR("save relation to db error", utils.M{
-			"error":    err.Error(),
+			"err":      err.Error(),
 			"relation": r,
 		})
 	}
@@ -36,8 +36,8 @@ func GetRelations(uid string) *Relation {
 	err := DB.Where("uid = ?", uid).Find(res).Error
 	if err != nil {
 		air.ERROR("get relation from db error", utils.M{
-			"error": err.Error(),
-			"uid":   uid,
+			"err": err.Error(),
+			"uid": uid,
 		})
 		return nil
 	}
