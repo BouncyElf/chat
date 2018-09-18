@@ -11,30 +11,38 @@ import (
 )
 
 type SocketManager struct {
-	uid      string
-	msg      *models.Message
-	newMsg   chan struct{}
-	shutdown chan struct{}
-	mu       *sync.Mutex
+	uid       string
+	msg       *models.Message
+	newMsg    chan struct{}
+	shutdown  chan struct{}
+	writeLock *sync.Mutex
+	sendChan  chan struct{}
 }
+
+var (
+	mu = &sync.Mutex{}
+)
 
 func newSocketManager(uid string) *SocketManager {
 	return &SocketManager{
-		uid:      uid,
-		newMsg:   make(chan struct{}, 1),
-		shutdown: make(chan struct{}),
-		mu:       &sync.Mutex{},
+		uid:       uid,
+		newMsg:    make(chan struct{}, 1),
+		shutdown:  make(chan struct{}),
+		writeLock: &sync.Mutex{},
+		sendChan:  make(chan struct{}, 1),
 	}
 }
 
 func (sm *SocketManager) SendMsg(msg *models.Message) {
+	sm.sendChan <- struct{}{}
 	defer func() {
+		<-sm.sendChan
 		if sm.msg != nil {
 			go sm.msg.Save()
 		}
 	}()
 	if !IsInGroup(sm.uid, msg.To) {
-		sm.mu.Lock()
+		sm.writeLock.Lock()
 		sm.msg = models.NewNotifyMsg(models.UserNotInGroupMsg)
 		sm.newMsg <- struct{}{}
 		air.ERROR("not in specific group", utils.M{
@@ -46,7 +54,7 @@ func (sm *SocketManager) SendMsg(msg *models.Message) {
 	}
 	group := models.GetGroup(sm.msg.To)
 	if group == nil {
-		sm.mu.Lock()
+		sm.writeLock.Lock()
 		sm.msg = models.NewNotifyMsg(models.GroupNotFoundMsg)
 		sm.newMsg <- struct{}{}
 		air.ERROR("no specific group found", utils.M{
@@ -59,7 +67,7 @@ func (sm *SocketManager) SendMsg(msg *models.Message) {
 	for _, v := range strings.Split(group.UIDs, ";") {
 		if value, ok := users.Get(v); ok {
 			me := value.(*SocketManager)
-			me.mu.Lock()
+			me.writeLock.Lock()
 			me.msg = msg
 			me.newMsg <- struct{}{}
 		}

@@ -1,8 +1,6 @@
 package handlers
 
 import (
-	"sync"
-
 	"github.com/BouncyElf/chat/gas"
 	"github.com/BouncyElf/chat/models"
 	"github.com/BouncyElf/chat/utils"
@@ -24,7 +22,7 @@ func socketHandler(req *air.Request, res *air.Response) error {
 	if err != nil {
 		air.ERROR("upgrade to websocket error", utils.M{
 			"request": req,
-			"err":   err.Error(),
+			"err":     err.Error(),
 		})
 		return utils.Error(500, err)
 	}
@@ -32,17 +30,15 @@ func socketHandler(req *air.Request, res *air.Response) error {
 
 	me := newSocketManager(req.Params["uid"])
 	users.Set(me.uid, me)
-	mu := &sync.Mutex{}
 
 	go func() {
 		for {
 			if t, b, err := c.ReadMessage(); err == nil {
 				switch t {
 				case air.WebSocketMessageTypeText:
-					mu.Lock()
+					// TODO: change SendMsg to a function
+					// go SendMsg()
 					me.SendMsg(models.NewMsg(me.uid, t, b))
-					mu.Unlock()
-				case air.WebSocketMessageTypeBinary:
 				case air.WebSocketMessageTypeConnectionClose:
 					me.Close()
 					return
@@ -73,7 +69,7 @@ func socketHandler(req *air.Request, res *air.Response) error {
 						})
 					me.Close()
 				}
-				me.mu.Unlock()
+				me.writeLock.Unlock()
 			}
 		case <-me.shutdown:
 			break

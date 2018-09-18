@@ -37,6 +37,22 @@ func (g *Group) Save() {
 	}
 }
 
+func (g *Group) Delete() {
+	if g.GID == 0 {
+		air.ERROR("attempt to delete group without id", utils.M{
+			"group": g,
+		})
+		return
+	}
+	err := DB.Delete(g).Error
+	if err != nil {
+		air.ERROR("delete group error", utils.M{
+			"err":   err.Error(),
+			"group": g,
+		})
+	}
+}
+
 func NewGroup(uids []string, name, t string) *Group {
 	return &Group{
 		GID:  common.NewSnowFlake(),
@@ -78,4 +94,21 @@ func GetGroupsSlice(gids []int64) []*Group {
 		})
 	}
 	return groups
+}
+
+func GetPrivateChatGroup(uid, tuid string) *Group {
+	uids := strings.Join(utils.Sort([]string{uid, tuid}), ";")
+	group := &Group{}
+	err := DB.Where("uids = ? AND type = ?", uids, common.ChatTypePrivate).
+		Find(group).Error
+	if err != nil {
+		air.ERROR("get group from db error", utils.M{
+			"err":  err.Error(),
+			"uid":  uid,
+			"tuid": tuid,
+			"uids": uids,
+		})
+		return nil
+	}
+	return group
 }

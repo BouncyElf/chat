@@ -4,6 +4,7 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"fmt"
+	"sort"
 	"strconv"
 
 	"github.com/aofei/air"
@@ -49,4 +50,9 @@ func MD5(v string) string {
 	h := md5.New()
 	h.Write([]byte(v))
 	return hex.EncodeToString(h.Sum(nil))
+}
+
+func Sort(ss []string) []string {
+	sort.Sort(sort.StringSlice(ss))
+	return ss
 }

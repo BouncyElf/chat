@@ -27,6 +27,14 @@ func addMemberHandler(req *air.Request, res *air.Response) error {
 	return utils.Success(res, "")
 }
 
+func removeGroupHandler(req *air.Request, res *air.Response) error {
+	return utils.Success(res, "")
+}
+
+func getGroupHandler(req *air.Request, res *air.Response) error {
+	return utils.Success(res, "")
+}
+
 func IsInGroup(uid string, gid int64) bool {
 	group := models.GetGroup(gid)
 	if group == nil {
