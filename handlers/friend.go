@@ -1,8 +1,10 @@
 package handlers
 
 import (
+	"errors"
 	"strings"
 
+	"github.com/BouncyElf/chat/common"
 	"github.com/BouncyElf/chat/gas"
 	"github.com/BouncyElf/chat/models"
 	"github.com/BouncyElf/chat/utils"
@@ -16,27 +18,79 @@ func init() {
 		Gases:  []air.Gas{gas.Auth},
 	}
 	a.GET("/list", listFriendHandler)
+	a.POST("/confirm/friend", confirmAddFriend)
 	a.POST("/add", addFriendHandler)
 	a.POST("/delete", deleteFriendHandler)
 }
 
 func listFriendHandler(req *air.Request, res *air.Response) error {
-	friends := models.GetFriends(req.Params["uid"])
-	return utils.Success(res, models.GetUserInfosSlice(friends))
+	uid := req.Params["uid"]
+	friends := models.GetFriends(uid)
+	friendsInfos := models.GetUserInfosSlice(friends)
+	lists := []interface{}{}
+	for _, friend := range friendsInfos {
+		group := models.GetPrivateChatGroup(uid, friend.UID)
+		if group != nil {
+			lists = append(lists, utils.M{
+				"info": friend,
+				"gid":  group.GID,
+			})
+		}
+	}
+	return utils.Success(res, lists)
 }
 
 func addFriendHandler(req *air.Request, res *air.Response) error {
 	uid := req.Params["uid"]
 	tuid := req.Params["tuid"]
-	_, _ = uid, tuid
-	// TODO: send system msg to confirm or abort
+	info := models.GetUserInfo(uid)
+	if info == nil {
+		air.ERROR("userinfo not found", utils.M{
+			"uid": uid,
+		})
+		return utils.Error(404, errors.New("userinfo not found"))
+	}
+	SendMsg(nil, &models.Message{
+		From:    common.SystemUID,
+		To:      tuid,
+		Type:    common.MsgTypeSystem,
+		Content: info.Name + "申请成为您的好友",
+	})
 	return utils.Success(res, "")
 }
 
-func confirmAddFriend(uid, tuid string) error {
-	// TODO: update uid and tuid's relation
-	// add group of uid and tuid, ChatTypePrivate
-	return nil
+func confirmAddFriend(req *air.Request, res *air.Response) error {
+	uid := req.Params["uid"]
+	tuid := req.Params["tuid"]
+	relation := models.GetRelations([]string{uid, tuid})
+	if relation[uid] == nil {
+		relation[uid] = models.NewRelation(uid)
+	}
+	if !strings.Contains(relation[uid].UIDs, tuid) {
+		relation[uid].UIDs = strings.Join([]string{
+			relation[uid].UIDs,
+			tuid,
+		}, ";")
+	}
+	go relation[uid].Save()
+	if relation[tuid] == nil {
+		relation[tuid] = models.NewRelation(tuid)
+	}
+	if !strings.Contains(relation[tuid].UIDs, uid) {
+		relation[tuid].UIDs = strings.Join([]string{
+			relation[tuid].UIDs,
+			uid,
+		}, ";")
+	}
+	go relation[tuid].Save()
+	info := models.GetUserInfos([]string{uid, tuid})
+	if info[uid] != nil && info[tuid] != nil {
+		name := strings.Join([]string{info[uid].Name, info[tuid].Name},
+			";")
+		go models.NewGroup([]string{uid, tuid}, name,
+			common.ChatTypePrivate).Save()
+	}
+	return utils.Success(res, "")
 }
 
 func deleteFriendHandler(req *air.Request, res *air.Response) error {
@@ -44,27 +98,32 @@ func deleteFriendHandler(req *air.Request, res *air.Response) error {
 	tuid := req.Params["tuid"]
 	relations := models.GetRelations([]string{uid, tuid})
 	if relations[uid] != nil {
-		friends := strings.Split(relations[uid].UIDs, ";")
-		for k, v := range friends {
-			if v == tuid {
-				friends = append(friends[:k], friends[k+1:]...)
-				break
+		if strings.Contains(relations[uid].UIDs, tuid) {
+			friends := strings.Split(relations[uid].UIDs, ";")
+			for k, v := range friends {
+				if v == tuid {
+					friends = append(friends[:k],
+						friends[k+1:]...)
+					break
+				}
 			}
+			relations[uid].UIDs = strings.Join(friends, ";")
+			relations[uid].Save()
 		}
-		relations[uid].UIDs = strings.Join(friends, ";")
-		relations[uid].Save()
 	}
 	if relations[tuid] != nil {
-		friends := strings.Split(relations[tuid].UIDs, ";")
-		for k, v := range friends {
-			if v == uid {
-				friends = append(friends[:k], friends[k+1:]...)
-				break
+		if strings.Contains(relations[tuid].UIDs, uid) {
+			friends := strings.Split(relations[tuid].UIDs, ";")
+			for k, v := range friends {
+				if v == uid {
+					friends = append(friends[:k],
+						friends[k+1:]...)
+					break
+				}
 			}
+			relations[tuid].UIDs = strings.Join(friends, ";")
+			relations[tuid].Save()
 		}
-		relations[tuid].UIDs = strings.Join(friends, ";")
-		relations[tuid].Save()
 	}
-	// TODO: delete uid, tuid list
 	return utils.Success(res, "")
 }

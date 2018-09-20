@@ -36,8 +36,8 @@ type Message struct {
 	MID  string `gorm:"column:mid;primary_key" json:"id"`
 	From string `gorm:"column:from" json:"from"`
 
-	// gid
-	To      int64  `gorm:"column:to" json:"group_id"`
+	// gid or uid, when system notify `to` is uid
+	To      string `gorm:"column:to" json:"group_id"`
 	Type    string `gorm:"column:type" json:"type"`
 	Content string `gorm:"column:content" json:"content"`
 	Time    string `gorm:"column:time" json:"time"`
@@ -54,10 +54,13 @@ func (m *Message) Marshal() ([]byte, error) {
 }
 
 func (m *Message) Save() {
+	if m.MID == "" {
+		m.MID = common.NewUUID()
+	}
 	err := DB.Save(m).Error
 	if err != nil {
 		air.ERROR("save message to db error", utils.M{
-			"err":   err.Error(),
+			"err":     err.Error(),
 			"message": m,
 		})
 	}
@@ -66,8 +69,7 @@ func (m *Message) Save() {
 func NewMsg(from string, t air.WebSocketMessageType, b []byte) *Message {
 	m := utils.M{}
 	_ = json.Unmarshal(b, &m)
-	gid, _ := m["group_id"].(float64)
-	to := int64(gid)
+	to, _ := m["group_id"].(string)
 	msgType, _ := m["type"].(string)
 	content, _ := m["content"].(string)
 	return &Message{
@@ -84,5 +86,6 @@ func NewMsg(from string, t air.WebSocketMessageType, b []byte) *Message {
 func NewNotifyMsg(msg Message) *Message {
 	msg.MID = common.NewUUID()
 	msg.Time = time.Now().Format("15:04:05")
+	msg.MType = air.WebSocketMessageTypeText
 	return &msg
 }

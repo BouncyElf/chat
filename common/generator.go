@@ -7,8 +7,8 @@ func NewUUID() string {
 	return res.String()
 }
 
-func NewSnowFlake() int64 {
-	return SnowFlakeNode.Generate().Int64()
+func NewSnowFlake() string {
+	return SnowFlakeNode.Generate().String()
 }
 
 func NewSHAUUID(uid, name string) string {

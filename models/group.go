@@ -11,7 +11,7 @@ import (
 
 type Group struct {
 	// snowflake
-	GID int64 `gorm:"column:gid;primary_key" json:"gid"`
+	GID string `gorm:"column:gid;primary_key" json:"gid"`
 
 	// private chat, name is `a;b`
 	Name string `gorm:"colum:name" json:"name"`
@@ -25,7 +25,7 @@ func (Group) TableName() string {
 }
 
 func (g *Group) Save() {
-	if g.GID == 0 {
+	if g.GID == "" {
 		g.GID = common.NewSnowFlake()
 	}
 	err := DB.Save(g).Error
@@ -38,7 +38,7 @@ func (g *Group) Save() {
 }
 
 func (g *Group) Delete() {
-	if g.GID == 0 {
+	if g.GID == "" {
 		air.ERROR("attempt to delete group without id", utils.M{
 			"group": g,
 		})
@@ -62,7 +62,7 @@ func NewGroup(uids []string, name, t string) *Group {
 	}
 }
 
-func GetGroup(gid int64) *Group {
+func GetGroup(gid string) *Group {
 	res := &Group{}
 	err := DB.Where("gid = ?", gid).Find(res).Error
 	if err != nil {
@@ -75,16 +75,16 @@ func GetGroup(gid int64) *Group {
 	return res
 }
 
-func GetGroups(gids []int64) map[int64]*Group {
+func GetGroups(gids []string) map[string]*Group {
 	groups := GetGroupsSlice(gids)
-	res := map[int64]*Group{}
+	res := map[string]*Group{}
 	for _, v := range groups {
 		res[v.GID] = v
 	}
 	return res
 }
 
-func GetGroupsSlice(gids []int64) []*Group {
+func GetGroupsSlice(gids []string) []*Group {
 	groups := []*Group{}
 	err := DB.Where("gid in (?)", gids).Find(groups).Error
 	if err != nil {
@@ -97,7 +97,7 @@ func GetGroupsSlice(gids []int64) []*Group {
 }
 
 func GetPrivateChatGroup(uid, tuid string) *Group {
-	uids := strings.Join(utils.Sort([]string{uid, tuid}), ";")
+	uids := strings.Join([]string{uid, tuid}, ";")
 	group := &Group{}
 	err := DB.Where("uids = ? AND type = ?", uids, common.ChatTypePrivate).
 		Find(group).Error
@@ -109,6 +109,20 @@ func GetPrivateChatGroup(uid, tuid string) *Group {
 			"uids": uids,
 		})
 		return nil
+	}
+	if group.GID == "" {
+		uids = strings.Join([]string{tuid, uid}, ";")
+		err = DB.Where("uids = ? AND type = ?", uids,
+			common.ChatTypePrivate).Find(group).Error
+		if err != nil {
+			air.ERROR("get group from db error", utils.M{
+				"err":  err.Error(),
+				"uid":  uid,
+				"tuid": tuid,
+				"uids": uids,
+			})
+			return nil
+		}
 	}
 	return group
 }

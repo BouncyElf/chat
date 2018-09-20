@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/BouncyElf/chat/common"
+	"github.com/BouncyElf/chat/gas"
 	"github.com/BouncyElf/chat/models"
 	"github.com/BouncyElf/chat/utils"
 
@@ -18,6 +19,7 @@ func init() {
 
 	a.POST("/register", registerHandler)
 	a.POST("/login", loginHandler)
+	a.POST("/islogin", isloginHandler, gas.Auth)
 }
 
 func registerHandler(req *air.Request, res *air.Response) error {
@@ -62,11 +64,13 @@ func newUser(u *models.User, name string) (string, error) {
 	list := models.NewList(u.UID)
 	relation := models.NewRelation(u.UID)
 	session := models.NewSession(userInfo)
-	u.Save()
-	userInfo.Save()
-	list.Save()
-	relation.Save()
-	session.Save()
+	go func() {
+		u.Save()
+		userInfo.Save()
+		list.Save()
+		relation.Save()
+		session.Save()
+	}()
 	return session.SID, nil
 }
 
@@ -96,5 +100,9 @@ func loginHandler(req *air.Request, res *air.Response) error {
 	session := models.NewSession(userInfo)
 	session.Save()
 	res.Cookies[common.AuthCookieName] = common.NewAuthCookie(session.SID)
+	return utils.Success(res, "")
+}
+
+func isloginHandler(req *air.Request, res *air.Response) error {
 	return utils.Success(res, "")
 }

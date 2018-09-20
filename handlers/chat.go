@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"strings"
+
 	"github.com/BouncyElf/chat/gas"
 	"github.com/BouncyElf/chat/models"
 	"github.com/BouncyElf/chat/utils"
@@ -17,6 +19,70 @@ func init() {
 	air.GET("/socket", socketHandler, gas.Auth)
 }
 
+func SendMsg(sm *SocketManager, msg *models.Message) {
+	if msg == nil {
+		air.ERROR("nil message", utils.M{
+			"sm.uid": sm.uid,
+			"sm.msg": sm.msg,
+		})
+		return
+	}
+	defer func() {
+		if sm.msg != nil {
+			go sm.msg.Save()
+			return
+		}
+		go msg.Save()
+	}()
+	if sm == nil {
+		// system notify
+		if msg.Time == "" {
+			msg = models.NewNotifyMsg(*msg)
+		}
+		to, ok := users.Get(msg.To)
+		if ok {
+			me := to.(*SocketManager)
+			me.writeChan <- struct{}{}
+			me.msg = msg
+			me.newMsg <- struct{}{}
+		}
+		return
+	}
+	if !IsInGroup(sm.uid, msg.To) {
+		sm.writeChan <- struct{}{}
+		sm.msg = models.NewNotifyMsg(models.UserNotInGroupMsg)
+		sm.newMsg <- struct{}{}
+		air.ERROR("not in specific group", utils.M{
+			"uid":      sm.uid,
+			"group id": sm.msg.To,
+			"message":  sm.msg,
+		})
+		return
+	}
+	group := models.GetGroup(msg.To)
+	// IsInGroup has already judge if group is nil
+	// so, here group can't be nil
+	// if group == nil {
+	// 	sm.writeChan <- struct{}{}
+	// 	sm.msg = models.NewNotifyMsg(models.GroupNotFoundMsg)
+	// 	sm.newMsg <- struct{}{}
+	// 	air.ERROR("no specific group found", utils.M{
+	// 		"uid":      sm.uid,
+	// 		"group id": sm.msg.To,
+	// 		"message":  sm.msg,
+	// 	})
+	// 	return
+	// }
+	for _, v := range strings.Split(group.UIDs, ";") {
+		if value, ok := users.Get(v); ok {
+			me := value.(*SocketManager)
+			me.writeChan <- struct{}{}
+			me.msg = msg
+			me.newMsg <- struct{}{}
+		}
+	}
+}
+
 func socketHandler(req *air.Request, res *air.Response) error {
 	c, err := res.UpgradeToWebSocket()
 	if err != nil {
@@ -31,14 +97,18 @@ func socketHandler(req *air.Request, res *air.Response) error {
 	me := newSocketManager(req.Params["uid"])
 	users.Set(me.uid, me)
 
+	waitChan := make(chan struct{}, 1)
+
 	go func() {
 		for {
 			if t, b, err := c.ReadMessage(); err == nil {
 				switch t {
 				case air.WebSocketMessageTypeText:
-					// TODO: change SendMsg to a function
-					// go SendMsg()
-					me.SendMsg(models.NewMsg(me.uid, t, b))
+					waitChan <- struct{}{}
+					go func() {
+						SendMsg(me, models.NewMsg(me.uid, t, b))
+						<-waitChan
+					}()
 				case air.WebSocketMessageTypeConnectionClose:
 					me.Close()
 					return
@@ -69,7 +139,7 @@ func socketHandler(req *air.Request, res *air.Response) error {
 						})
 					me.Close()
 				}
-				me.writeLock.Unlock()
+				<-me.writeChan
 			}
 		case <-me.shutdown:
 			break

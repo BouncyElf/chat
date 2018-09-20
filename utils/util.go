@@ -4,7 +4,6 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"fmt"
-	"sort"
 	"strconv"
 
 	"github.com/aofei/air"
@@ -46,13 +45,18 @@ func ParseInt64(req *air.Request, key string) (int64, error) {
 	return strconv.ParseInt(v, 10, 64)
 }
 
+func MustInt(s string) int {
+	res, _ := strconv.Atoi(s)
+	return res
+}
+
+func MustInt64(s string) int64 {
+	res, _ := strconv.ParseInt(s, 10, 64)
+	return res
+}
+
 func MD5(v string) string {
 	h := md5.New()
 	h.Write([]byte(v))
 	return hex.EncodeToString(h.Sum(nil))
-}
-
-func Sort(ss []string) []string {
-	sort.Sort(sort.StringSlice(ss))
-	return ss
 }

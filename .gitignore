@@ -11,5 +11,6 @@
 main
 chat
 
-.DS_Store
+# sql
+sql/
 
