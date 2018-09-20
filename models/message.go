@@ -78,7 +78,7 @@ func NewMsg(from string, t air.WebSocketMessageType, b []byte) *Message {
 		To:      to,
 		Type:    msgType,
 		Content: content,
-		Time:    time.Now().Format("15:04:05"),
+		Time:    time.Now().Format("2006-01-02 15:04:05"),
 		MType:   t,
 	}
 }

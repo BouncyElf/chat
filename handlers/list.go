@@ -16,7 +16,7 @@ func init() {
 		Prefix: "/api/list",
 		Gases:  []air.Gas{gas.Auth},
 	}
-	a.GET("/get", getListHandler)
+	a.POST("/get", getListHandler)
 	a.POST("/update", updateListHandler)
 }
 

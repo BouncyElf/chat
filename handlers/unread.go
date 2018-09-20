@@ -2,6 +2,8 @@ package handlers
 
 import (
 	"github.com/BouncyElf/chat/gas"
+	"github.com/BouncyElf/chat/models"
+	"github.com/BouncyElf/chat/utils"
 
 	"github.com/aofei/air"
 )
@@ -15,5 +17,14 @@ func init() {
 }
 
 func updateUnreadHandler(req *air.Request, res *air.Response) error {
-	return nil
+	uid := req.Params["uid"]
+	gid := req.Params["gid"]
+	lastMID := req.Params["last_mid"]
+	unread := models.GetUnread(uid, gid)
+	if unread == nil {
+		unread = models.NewUnread(uid, gid, lastMID)
+	}
+	unread.LastMID = lastMID
+	go unread.Save()
+	return utils.Success(res, "")
 }

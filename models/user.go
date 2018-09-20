@@ -62,49 +62,6 @@ func NewUser(uname string, pwd string) *User {
 	}
 }
 
-func NewUserInfo(uid string, name string) *UserInfo {
-	return &UserInfo{
-		UID:       uid,
-		DisplayID: common.NewSHAUUID(uid, name),
-		Name:      name,
-		Bio:       "",
-	}
-}
-
-func GetUserInfos(uids []string) map[string]*UserInfo {
-	userInfos := GetUserInfosSlice(uids)
-	res := map[string]*UserInfo{}
-	for _, v := range userInfos {
-		res[v.UID] = v
-	}
-	return res
-}
-
-func GetUserInfosSlice(uids []string) []*UserInfo {
-	userInfos := []*UserInfo{}
-	err := DB.Where("uid in (?)", uids).Find(&userInfos).Error
-	if err != nil {
-		air.ERROR("get user infos error", utils.M{
-			"err":  err.Error(),
-			"uids": uids,
-		})
-	}
-	return userInfos
-}
-
-func GetUserInfo(uid string) *UserInfo {
-	res := &UserInfo{}
-	err := DB.Where("uid = ?", uid).Find(res).Error
-	if err != nil {
-		air.ERROR("get userinfo from db error", utils.M{
-			"err": err.Error(),
-			"uid": uid,
-		})
-		return nil
-	}
-	return res
-}
-
 func GetUser(uid string) *User {
 	res := &User{}
 	err := DB.Where("uid = ?", uid).Find(res).Error
@@ -129,4 +86,47 @@ func GetUserByUsername(username string) *User {
 		return nil
 	}
 	return res
+}
+
+func NewUserInfo(uid string, name string) *UserInfo {
+	return &UserInfo{
+		UID:       uid,
+		DisplayID: common.NewSHAUUID(uid, name),
+		Name:      name,
+		Bio:       "",
+	}
+}
+
+func GetUserInfo(uid string) *UserInfo {
+	res := &UserInfo{}
+	err := DB.Where("uid = ?", uid).Find(res).Error
+	if err != nil {
+		air.ERROR("get userinfo from db error", utils.M{
+			"err": err.Error(),
+			"uid": uid,
+		})
+		return nil
+	}
+	return res
+}
+
+func GetUserInfos(uids []string) map[string]*UserInfo {
+	userInfos := GetUserInfosSlice(uids)
+	res := map[string]*UserInfo{}
+	for _, v := range userInfos {
+		res[v.UID] = v
+	}
+	return res
+}
+
+func GetUserInfosSlice(uids []string) []*UserInfo {
+	userInfos := []*UserInfo{}
+	err := DB.Where("uid in (?)", uids).Find(&userInfos).Error
+	if err != nil {
+		air.ERROR("get user infos error", utils.M{
+			"err":  err.Error(),
+			"uids": uids,
+		})
+	}
+	return userInfos
 }

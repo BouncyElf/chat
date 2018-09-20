@@ -11,8 +11,8 @@ func init() {
 		Prefix: "/api/message",
 		Gases:  []air.Gas{gas.Auth},
 	}
-	a.GET("/list", listMsgHandler)
-	a.GET("/recent", recentMsgHandler)
+	a.POST("/list", listMsgHandler)
+	a.POST("/recent", recentMsgHandler)
 }
 
 // listMsgHandler return the list page recent message.

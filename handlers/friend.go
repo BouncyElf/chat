@@ -17,7 +17,7 @@ func init() {
 		Prefix: "/api/friend",
 		Gases:  []air.Gas{gas.Auth},
 	}
-	a.GET("/list", listFriendHandler)
+	a.POST("/list", listFriendHandler)
 	a.POST("/confirm/friend", confirmAddFriend)
 	a.POST("/add", addFriendHandler)
 	a.POST("/delete", deleteFriendHandler)

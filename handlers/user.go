@@ -20,6 +20,7 @@ func init() {
 	a.POST("/register", registerHandler)
 	a.POST("/login", loginHandler)
 	a.POST("/islogin", isloginHandler, gas.Auth)
+	a.POST("/info", getInfoHandler, gas.Auth)
 }
 
 func registerHandler(req *air.Request, res *air.Response) error {
@@ -105,4 +106,9 @@ func loginHandler(req *air.Request, res *air.Response) error {
 
 func isloginHandler(req *air.Request, res *air.Response) error {
 	return utils.Success(res, "")
+}
+
+func getInfoHandler(req *air.Request, res *air.Response) error {
+	uid := req.Params["uid"]
+	return utils.Success(res, models.GetUserInfo(uid))
 }
