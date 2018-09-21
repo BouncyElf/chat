@@ -9,6 +9,7 @@ type Unread struct {
 	UID     string `gorm:"column:uid" json:"uid"`
 	GID     string `gorm:"column:gid" json:"gid"`
 	LastMID string `gorm:"column:last_mid" json:"last_mid"`
+	Count   int    `gorm:"column:count" json:"count"`
 }
 
 func (Unread) TableName() string {
@@ -34,6 +35,7 @@ func NewUnread(uid, gid string, lastMID ...string) *Unread {
 		UID:     uid,
 		GID:     gid,
 		LastMID: mid,
+		Count:   0,
 	}
 }
 

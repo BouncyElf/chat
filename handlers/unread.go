@@ -25,6 +25,7 @@ func updateUnreadHandler(req *air.Request, res *air.Response) error {
 		unread = models.NewUnread(uid, gid, lastMID)
 	}
 	unread.LastMID = lastMID
+	unread.Count++
 	go unread.Save()
 	return utils.Success(res, "")
 }
