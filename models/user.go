@@ -19,7 +19,7 @@ func (User) TableName() string {
 
 func (u *User) Save() {
 	if u.UID == "" {
-		u.UID = common.NewUUID()
+		u.UID = common.NewSnowFlake()
 	}
 	err := DB.Save(u).Error
 	if err != nil {
@@ -32,12 +32,12 @@ func (u *User) Save() {
 
 type UserInfo struct {
 	// uuid
-	UID string `gorm:"column:uid;primary_key"`
+	UID string `gorm:"column:uid;primary_key" json:"uid"`
 
 	// uid + name uuid
-	DisplayID string `gorm:"column:display_id;unique"`
-	Name      string `gorm:"column:name;unique"`
-	Bio       string `gorm:"column:bio"`
+	DisplayID string `gorm:"column:display_id;unique" json:"display_id"`
+	Name      string `gorm:"column:name;unique" json:"name"`
+	Bio       string `gorm:"column:bio" json:"bio"`
 }
 
 func (UserInfo) TableName() string {
@@ -56,7 +56,7 @@ func (info *UserInfo) Save() {
 
 func NewUser(uname string, pwd string) *User {
 	return &User{
-		UID:      common.NewUUID(),
+		UID:      common.NewSnowFlake(),
 		Username: uname,
 		Password: pwd,
 	}
@@ -91,7 +91,7 @@ func GetUserByUsername(username string) *User {
 func NewUserInfo(uid string, name string) *UserInfo {
 	return &UserInfo{
 		UID:       uid,
-		DisplayID: common.NewSHAUUID(uid, name),
+		DisplayID: common.NewSnowFlake(),
 		Name:      name,
 		Bio:       "",
 	}

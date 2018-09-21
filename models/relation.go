@@ -9,10 +9,10 @@ import (
 )
 
 type Relation struct {
-	UID string `gorm:"column:uid;primary_key"`
+	UID string `gorm:"column:uid;primary_key" json:"uid"`
 
 	// uids is the uid's friend list
-	UIDs string `gorm:"column:uids"`
+	UIDs string `gorm:"column:uids" json:"uids"`
 }
 
 func (Relation) TableName() string {

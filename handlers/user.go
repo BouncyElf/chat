@@ -59,7 +59,7 @@ func newUser(u *models.User, name string) (string, error) {
 		return "", errors.New("user is nil")
 	}
 	if u.UID == "" {
-		u.UID = common.NewUUID()
+		u.UID = common.NewSnowFlake()
 	}
 	userInfo := models.NewUserInfo(u.UID, name)
 	list := models.NewList(u.UID)

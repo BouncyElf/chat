@@ -55,7 +55,7 @@ func (m *Message) Marshal() ([]byte, error) {
 
 func (m *Message) Save() {
 	if m.MID == "" {
-		m.MID = common.NewUUID()
+		m.MID = common.NewSnowFlake()
 	}
 	err := DB.Save(m).Error
 	if err != nil {
@@ -73,7 +73,7 @@ func NewMsg(from string, t air.WebSocketMessageType, b []byte) *Message {
 	msgType, _ := m["type"].(string)
 	content, _ := m["content"].(string)
 	return &Message{
-		MID:     common.NewUUID(),
+		MID:     common.NewSnowFlake(),
 		From:    from,
 		To:      to,
 		Type:    msgType,
@@ -84,7 +84,7 @@ func NewMsg(from string, t air.WebSocketMessageType, b []byte) *Message {
 }
 
 func NewNotifyMsg(msg Message) *Message {
-	msg.MID = common.NewUUID()
+	msg.MID = common.NewSnowFlake()
 	msg.Time = time.Now().Format("15:04:05")
 	msg.MType = air.WebSocketMessageTypeText
 	return &msg

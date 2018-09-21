@@ -13,7 +13,7 @@ func (s *Session) Save() {
 
 func NewSession(info *UserInfo) *Session {
 	return &Session{
-		SID:  common.NewUUID(),
+		SID:  common.NewSnowFlake(),
 		Info: *info,
 	}
 }

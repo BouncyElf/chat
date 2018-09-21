@@ -62,17 +62,6 @@ func SendMsg(sm *SocketManager, msg *models.Message) {
 	group := models.GetGroup(msg.To)
 	// IsInGroup has already judge if group is nil
 	// so, here group can't be nil
-	// if group == nil {
-	// 	sm.writeChan <- struct{}{}
-	// 	sm.msg = models.NewNotifyMsg(models.GroupNotFoundMsg)
-	// 	sm.newMsg <- struct{}{}
-	// 	air.ERROR("no specific group found", utils.M{
-	// 		"uid":      sm.uid,
-	// 		"group id": sm.msg.To,
-	// 		"message":  sm.msg,
-	// 	})
-	// 	return
-	// }
 	for _, v := range strings.Split(group.UIDs, ";") {
 		if value, ok := users.Get(v); ok {
 			me := value.(*SocketManager)
