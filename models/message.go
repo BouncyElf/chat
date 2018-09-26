@@ -33,8 +33,9 @@ func initMessage() error {
 
 type Message struct {
 	// uuid
-	MID  string `gorm:"column:mid;primary_key" json:"id"`
-	From string `gorm:"column:from" json:"from"`
+	MID      string `gorm:"column:mid;primary_key" json:"id"`
+	From     string `gorm:"column:from" json:"from"`
+	FromName string `gorm:"column:from_name" json:"from_name"`
 
 	// gid or uid, when system notify `to` is uid
 	To      string `gorm:"column:to" json:"group_id"`
@@ -66,20 +67,21 @@ func (m *Message) Save() {
 	}
 }
 
-func NewMsg(from string, t air.WebSocketMessageType, b []byte) *Message {
+func NewMsg(from, name string, t air.WebSocketMessageType, b []byte) *Message {
 	m := utils.M{}
 	_ = json.Unmarshal(b, &m)
 	to, _ := m["group_id"].(string)
 	msgType, _ := m["type"].(string)
 	content, _ := m["content"].(string)
 	return &Message{
-		MID:     common.NewSnowFlake(),
-		From:    from,
-		To:      to,
-		Type:    msgType,
-		Content: content,
-		Time:    time.Now().Format("2006-01-02 15:04:05"),
-		MType:   t,
+		MID:      common.NewSnowFlake(),
+		From:     from,
+		FromName: name,
+		To:       to,
+		Type:     msgType,
+		Content:  content,
+		Time:     time.Now().Format("2006-01-02 15:04:05"),
+		MType:    t,
 	}
 }
 

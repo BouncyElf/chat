@@ -45,6 +45,8 @@ func SendMsg(sm *SocketManager, msg *models.Message) {
 			me.writeChan <- struct{}{}
 			me.msg = msg
 			me.newMsg <- struct{}{}
+		} else {
+			// TODO: update unread
 		}
 		return
 	}
@@ -68,6 +70,8 @@ func SendMsg(sm *SocketManager, msg *models.Message) {
 			me.writeChan <- struct{}{}
 			me.msg = msg
 			me.newMsg <- struct{}{}
+		} else {
+			// TODO: update unread
 		}
 	}
 }
@@ -84,6 +88,13 @@ func socketHandler(req *air.Request, res *air.Response) error {
 	defer c.Close()
 
 	me := newSocketManager(req.Params["uid"])
+	myInfo := models.GetUserInfo(req.Params["uid"])
+	if myInfo == nil {
+		air.ERROR("get user info error", utils.M{
+			"request": req,
+		})
+		return utils.Error(500, err)
+	}
 	users.Set(me.uid, me)
 
 	waitChan := make(chan struct{}, 1)
@@ -95,7 +106,15 @@ func socketHandler(req *air.Request, res *air.Response) error {
 				case air.WebSocketMessageTypeText:
 					waitChan <- struct{}{}
 					go func() {
-						SendMsg(me, models.NewMsg(me.uid, t, b))
+						SendMsg(
+							me,
+							models.NewMsg(
+								me.uid,
+								myInfo.Name,
+								t,
+								b,
+							),
+						)
 						<-waitChan
 					}()
 				case air.WebSocketMessageTypeConnectionClose:

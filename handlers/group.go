@@ -22,21 +22,9 @@ func init() {
 
 func newGroupHandler(req *air.Request, res *air.Response) error {
 	uid := req.Params["uid"]
-	tuids, ok := req.Params["tuids"]
-	if !ok {
-		air.ERROR("bad request lack params tuids")
-		return utils.Error(400, errors.New("no param tuids"))
-	}
-	groupType, ok := req.Params["group_type"]
-	if !ok {
-		air.ERROR("bad request lack params group type")
-		return utils.Error(400, errors.New("no param type"))
-	}
-	groupName, ok := req.Params["group_name"]
-	if !ok {
-		air.ERROR("bad request lack params group name")
-		return utils.Error(400, errors.New("no param name"))
-	}
+	tuids, _ := req.Params["tuids"]
+	groupType, _ := req.Params["group_type"]
+	groupName, _ := req.Params["group_name"]
 	go models.NewGroup(append(strings.Split(tuids, ";"), uid),
 		groupType, groupName).Save()
 	return utils.Success(res, "")

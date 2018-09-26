@@ -108,7 +108,7 @@ func deleteFriendHandler(req *air.Request, res *air.Response) error {
 				}
 			}
 			relations[uid].UIDs = strings.Join(friends, ";")
-			relations[uid].Save()
+			go relations[uid].Save()
 		}
 	}
 	if relations[tuid] != nil {
@@ -122,7 +122,7 @@ func deleteFriendHandler(req *air.Request, res *air.Response) error {
 				}
 			}
 			relations[tuid].UIDs = strings.Join(friends, ";")
-			relations[tuid].Save()
+			go relations[tuid].Save()
 		}
 	}
 	return utils.Success(res, "")
