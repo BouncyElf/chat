@@ -91,3 +91,32 @@ func NewNotifyMsg(msg Message) *Message {
 	msg.MType = air.WebSocketMessageTypeText
 	return &msg
 }
+
+func GetLastMsg(gid string) *Message {
+	res := &Message{}
+	err := DB.Where("to = ?", gid).Order("mid desc").Limit(1).
+		Find(res).Error
+	if err != nil {
+		air.ERROR("get last message from db error", utils.M{
+			"err": err.Error(),
+			"to":  gid,
+		})
+		return nil
+	}
+	return res
+}
+
+func GetMessagesSlice(gid, minMID string, count int) []*Message {
+	msgs := []*Message{}
+	err := DB.Where("to = ? AND mid > ?", gid, minMID).Order("mid desc").
+		Limit(count).Find(msgs).Error
+	if err != nil {
+		air.ERROR("get messages from db error", utils.M{
+			"err":     err.Error(),
+			"to":      gid,
+			"min mid": minMID,
+			"count":   count,
+		})
+	}
+	return msgs
+}

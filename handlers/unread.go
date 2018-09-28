@@ -28,3 +28,18 @@ func updateUnreadHandler(req *air.Request, res *air.Response) error {
 	go unread.Save()
 	return utils.Success(res, "")
 }
+
+func hasUnreadMsg(uid, gid string) bool {
+	unread := models.GetUnread(uid, gid)
+	if unread == nil {
+		return false
+	}
+	lastMsg := models.GetLastMsg(gid)
+	if lastMsg == nil {
+		return false
+	}
+	if unread.LastMID < lastMsg.MID {
+		return true
+	}
+	return false
+}
