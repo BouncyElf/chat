@@ -27,12 +27,24 @@ func SendMsg(sm *SocketManager, msg *models.Message) {
 		})
 		return
 	}
+	var (
+		updateUnread    = false
+		updateUnreadUID = ""
+		updateUnreadGID = ""
+	)
 	defer func() {
+		realMsg := msg
 		if sm.msg != nil {
-			go sm.msg.Save()
-			return
+			realMsg = sm.msg
 		}
-		go msg.Save()
+		realMsg.Save()
+		if updateUnread &&
+			!hasUnreadMsg(updateUnreadUID, updateUnreadGID) {
+			updateUnreadMsg(
+				updateUnreadUID,
+				updateUnreadGID,
+				realMsg.MID)
+		}
 	}()
 	if sm == nil {
 		// system notify
@@ -46,7 +58,9 @@ func SendMsg(sm *SocketManager, msg *models.Message) {
 			me.msg = msg
 			me.newMsg <- struct{}{}
 		} else {
-			// TODO: update unread
+			updateUnread = true
+			updateUnreadUID = msg.To
+			updateUnreadGID = msg.To
 		}
 		return
 	}
@@ -71,7 +85,9 @@ func SendMsg(sm *SocketManager, msg *models.Message) {
 			me.msg = msg
 			me.newMsg <- struct{}{}
 		} else {
-			// TODO: update unread
+			updateUnread = true
+			updateUnreadUID = v
+			updateUnreadGID = msg.To
 		}
 	}
 }
