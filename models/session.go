@@ -1,6 +1,8 @@
 package models
 
-import "github.com/BouncyElf/chat/common"
+import (
+	"github.com/BouncyElf/chat/common"
+)
 
 type Session struct {
 	// uuid
@@ -8,7 +10,10 @@ type Session struct {
 	Info UserInfo
 }
 
+var GlobalSession = map[string]*Session{}
+
 func (s *Session) Save() {
+	GlobalSession[s.SID] = s
 }
 
 func NewSession(info *UserInfo) *Session {
@@ -19,5 +24,5 @@ func NewSession(info *UserInfo) *Session {
 }
 
 func GetSession(sid string) *Session {
-	return nil
+	return GlobalSession[sid]
 }

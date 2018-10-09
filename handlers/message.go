@@ -21,6 +21,7 @@ func init() {
 
 // listMsgHandler return the list page recent message.
 func listMsgHandler(req *air.Request, res *air.Response) error {
+	uid := req.Params["uid"]
 	gids := strings.Split(req.Params["gids"], ";")
 	data := utils.M{}
 	for _, gid := range gids {
@@ -28,7 +29,10 @@ func listMsgHandler(req *air.Request, res *air.Response) error {
 		if lastMsg == nil {
 			break
 		}
-		data[gid] = lastMsg
+		data[gid] = utils.M{
+			"show_msg": lastMsg,
+			"unread":   hasUnreadMsg(uid, gid),
+		}
 	}
 	return utils.Success(res, data)
 }

@@ -97,6 +97,7 @@ func socketHandler(req *air.Request, res *air.Response) error {
 	if err != nil {
 		air.ERROR("upgrade to websocket error", utils.M{
 			"request": req,
+			"res":     res,
 			"err":     err.Error(),
 		})
 		return utils.Error(500, err)

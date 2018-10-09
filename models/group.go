@@ -53,7 +53,7 @@ func (g *Group) Delete() {
 	}
 }
 
-func NewGroup(uids []string, name, t string) *Group {
+func NewGroup(uids []string, t, name string) *Group {
 	return &Group{
 		GID:  common.NewSnowFlake(),
 		Name: name,
@@ -86,7 +86,7 @@ func GetGroups(gids []string) map[string]*Group {
 
 func GetGroupsSlice(gids []string) []*Group {
 	groups := []*Group{}
-	err := DB.Where("gid in (?)", gids).Find(groups).Error
+	err := DB.Where("gid in (?)", gids).Find(&groups).Error
 	if err != nil {
 		air.ERROR("get groups error", utils.M{
 			"err":  err.Error(),

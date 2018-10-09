@@ -42,19 +42,26 @@ func listFriendHandler(req *air.Request, res *air.Response) error {
 
 func addFriendHandler(req *air.Request, res *air.Response) error {
 	uid := req.Params["uid"]
-	tuid := req.Params["tuid"]
-	info := models.GetUserInfo(uid)
+	displayID := req.Params["display_id"]
+	info := models.GetUserInfoByDisplayID(displayID)
 	if info == nil {
 		air.ERROR("userinfo not found", utils.M{
-			"uid": uid,
+			"display_id": displayID,
 		})
 		return utils.Error(404, errors.New("userinfo not found"))
 	}
+	myInfo := models.GetUserInfo(uid)
+	if myInfo == nil {
+		air.ERROR("userinfo not found", utils.M{
+			"uid": uid,
+		})
+		return utils.Error(500, errors.New("server internal error"))
+	}
 	SendMsg(nil, &models.Message{
 		From:    common.SystemUID,
-		To:      tuid,
+		To:      info.UID,
 		Type:    common.MsgTypeSystem,
-		Content: info.Name + "申请成为您的好友",
+		Content: myInfo.Name + "申请成为您的好友",
 	})
 	return utils.Success(res, "")
 }
@@ -85,10 +92,21 @@ func confirmAddFriend(req *air.Request, res *air.Response) error {
 	go relation[tuid].Save()
 	info := models.GetUserInfos([]string{uid, tuid})
 	if info[uid] != nil && info[tuid] != nil {
-		name := strings.Join([]string{info[uid].Name, info[tuid].Name},
-			";")
-		go models.NewGroup([]string{uid, tuid}, name,
-			common.ChatTypePrivate).Save()
+		name := strings.Join(
+			[]string{
+				info[uid].Name,
+				info[tuid].Name,
+			},
+			";",
+		)
+		go models.NewGroup(
+			[]string{
+				uid,
+				tuid,
+			},
+			common.ChatTypePrivate,
+			name,
+		).Save()
 	}
 	return utils.Success(res, "")
 }

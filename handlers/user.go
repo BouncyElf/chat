@@ -86,7 +86,7 @@ func loginHandler(req *air.Request, res *air.Response) error {
 		return utils.Error(404, errors.New("user not found"))
 	}
 	pwd := utils.MD5(password)
-	if pwd != password {
+	if pwd != u.Password {
 		air.ERROR("wrong password", utils.M{
 			"username": username,
 			"host":     req.ClientIP.String(),

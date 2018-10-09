@@ -4,6 +4,7 @@ import (
 	"errors"
 	"strings"
 
+	"github.com/BouncyElf/chat/common"
 	"github.com/BouncyElf/chat/gas"
 	"github.com/BouncyElf/chat/models"
 	"github.com/BouncyElf/chat/utils"
@@ -18,15 +19,20 @@ func init() {
 	}
 	a.POST("/new", newGroupHandler)
 	a.POST("/addmem", addMemberHandler)
+	a.POST("/update/name", updateGroupNameHandler)
 }
 
 func newGroupHandler(req *air.Request, res *air.Response) error {
-	uid := req.Params["uid"]
 	tuids, _ := req.Params["tuids"]
-	groupType, _ := req.Params["group_type"]
 	groupName, _ := req.Params["group_name"]
-	go models.NewGroup(append(strings.Split(tuids, ";"), uid),
-		groupType, groupName).Save()
+	if groupName == "" {
+		groupName = common.DefaultGroupName
+	}
+	go models.NewGroup(
+		strings.Split(tuids, ";"),
+		common.ChatTypeGroup,
+		groupName,
+	).Save()
 	return utils.Success(res, "")
 }
 
@@ -86,4 +92,30 @@ func IsInGroup(uid string, gid string) bool {
 		}
 	}
 	return false
+}
+
+func updateGroupNameHandler(req *air.Request, res *air.Response) error {
+	gid := req.Params["gid"]
+	uid := req.Params["uid"]
+	name := req.Params["name"]
+	if !IsInGroup(uid, gid) {
+		air.ERROR("not in group", utils.M{
+			"gid":  gid,
+			"uid":  uid,
+			"name": name,
+		})
+		return utils.Error(400, errors.New("bad request"))
+	}
+	group := models.GetGroup(gid)
+	if group == nil {
+		air.ERROR("group not found", utils.M{
+			"gid":  gid,
+			"uid":  uid,
+			"name": name,
+		})
+		return utils.Error(404, errors.New("group not found"))
+	}
+	group.Name = name
+	go group.Save()
+	return utils.Success(res, "")
 }

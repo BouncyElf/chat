@@ -9,6 +9,9 @@ import (
 func init() {
 	air.ErrorHandler = errorHandler
 	air.GET("/", indexHandler)
+	air.STATIC("/js", "assets/dist/js")
+	air.STATIC("/css", "assets/dist/css")
+	air.STATIC("/fonst", "assets/dist/fonts")
 }
 
 func errorHandler(err error, req *air.Request, res *air.Response) {
@@ -39,5 +42,5 @@ func errorHandler(err error, req *air.Request, res *air.Response) {
 }
 
 func indexHandler(req *air.Request, res *air.Response) error {
-	return res.String("hello chat")
+	return res.File("assets/dist/index.html")
 }

@@ -18,4 +18,6 @@ const (
 	// group type
 	ChatTypePrivate = "private"
 	ChatTypeGroup   = "group"
+
+	DefaultGroupName = "群聊"
 )

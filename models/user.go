@@ -110,6 +110,19 @@ func GetUserInfo(uid string) *UserInfo {
 	return res
 }
 
+func GetUserInfoByDisplayID(displayID string) *UserInfo {
+	res := &UserInfo{}
+	err := DB.Where("display_id = ?", displayID).Find(res).Error
+	if err != nil {
+		air.ERROR("get userinfo from db error", utils.M{
+			"err":        err.Error(),
+			"display_id": displayID,
+		})
+		return nil
+	}
+	return res
+}
+
 func GetUserInfos(uids []string) map[string]*UserInfo {
 	userInfos := GetUserInfosSlice(uids)
 	res := map[string]*UserInfo{}
