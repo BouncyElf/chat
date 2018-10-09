@@ -11,6 +11,9 @@
 main
 chat
 
+# assets file
+assets/
+
 # sql
 sql/
 

@@ -21,6 +21,7 @@ func init() {
 	a.POST("/login", loginHandler)
 	a.POST("/islogin", isloginHandler, gas.Auth)
 	a.POST("/info", getInfoHandler, gas.Auth)
+	a.POST("/bio/update", updateBioHandler, gas.Auth)
 }
 
 func registerHandler(req *air.Request, res *air.Response) error {
@@ -111,4 +112,20 @@ func isloginHandler(req *air.Request, res *air.Response) error {
 func getInfoHandler(req *air.Request, res *air.Response) error {
 	uid := req.Params["uid"]
 	return utils.Success(res, models.GetUserInfo(uid))
+}
+
+func updateBioHandler(req *air.Request, res *air.Response) error {
+	uid := req.Params["uid"]
+	bio := req.Params["bio"]
+	info := models.GetUserInfo(uid)
+	if info == nil {
+		air.ERROR("get info error", utils.M{
+			"uid": uid,
+			"bio": bio,
+		})
+		return utils.Error(404, errors.New("user info not found"))
+	}
+	info.Bio = bio
+	go info.Save()
+	return utils.Success(res, "")
 }
