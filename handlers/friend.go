@@ -58,9 +58,9 @@ func addFriendHandler(req *air.Request, res *air.Response) error {
 		return utils.Error(500, errors.New("server internal error"))
 	}
 	SendMsg(nil, &models.Message{
-		From:    common.SystemUID,
+		From:    myInfo.UID,
 		To:      info.UID,
-		Type:    common.MsgTypeSystem,
+		Type:    common.MsgTypeSystem + "/" + "friend",
 		Content: myInfo.Name + "申请成为您的好友",
 	})
 	return utils.Success(res, "")

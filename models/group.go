@@ -99,20 +99,11 @@ func GetGroupsSlice(gids []string) []*Group {
 func GetPrivateChatGroup(uid, tuid string) *Group {
 	uids := strings.Join([]string{uid, tuid}, ";")
 	group := &Group{}
-	err := DB.Where("uids = ? AND type = ?", uids, common.ChatTypePrivate).
+	err := DB.Where("uids = ? AND `type` = ?", uids, common.ChatTypePrivate).
 		Find(group).Error
-	if err != nil {
-		air.ERROR("get group from db error", utils.M{
-			"err":  err.Error(),
-			"uid":  uid,
-			"tuid": tuid,
-			"uids": uids,
-		})
-		return nil
-	}
 	if group.GID == "" {
 		uids = strings.Join([]string{tuid, uid}, ";")
-		err = DB.Where("uids = ? AND type = ?", uids,
+		err = DB.Where("uids = ? AND `type` = ?", uids,
 			common.ChatTypePrivate).Find(group).Error
 		if err != nil {
 			air.ERROR("get group from db error", utils.M{

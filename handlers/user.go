@@ -3,6 +3,7 @@ package handlers
 import (
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/BouncyElf/chat/common"
 	"github.com/BouncyElf/chat/gas"
@@ -22,6 +23,7 @@ func init() {
 	a.POST("/islogin", isloginHandler, gas.Auth)
 	a.POST("/info", getInfoHandler, gas.Auth)
 	a.POST("/bio/update", updateBioHandler, gas.Auth)
+	a.POST("/logout", exitHandler, gas.Auth)
 }
 
 func registerHandler(req *air.Request, res *air.Response) error {
@@ -127,5 +129,12 @@ func updateBioHandler(req *air.Request, res *air.Response) error {
 	}
 	info.Bio = bio
 	go info.Save()
+	return utils.Success(res, "")
+}
+
+func exitHandler(req *air.Request, res *air.Response) error {
+	res.Cookies[common.AuthCookieName] = &air.Cookie{
+		Expires: time.Now().Add(-1 * time.Hour),
+	}
 	return utils.Success(res, "")
 }

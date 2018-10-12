@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"strings"
+	"time"
 
 	"github.com/BouncyElf/chat/gas"
 	"github.com/BouncyElf/chat/models"
@@ -27,46 +28,32 @@ func SendMsg(sm *SocketManager, msg *models.Message) {
 		})
 		return
 	}
-	var (
-		updateUnread    = false
-		updateUnreadUID = ""
-		updateUnreadGID = ""
-	)
 	defer func() {
 		realMsg := msg
-		if sm.msg != nil {
+		if sm != nil {
 			realMsg = sm.msg
 		}
 		realMsg.Save()
-		if updateUnread &&
-			!hasUnreadMsg(updateUnreadUID, updateUnreadGID) {
-			updateUnreadMsg(
-				updateUnreadUID,
-				updateUnreadGID,
-				realMsg.MID)
-		}
 	}()
+	if msg.Time == "" {
+		msg.Time = time.Now().Format("15:04:05")
+	}
 	if sm == nil {
 		// system notify
-		if msg.Time == "" {
-			msg = models.NewNotifyMsg(*msg)
-		}
+		msg = models.NewNotifyMsg(*msg)
 		to, ok := users.Get(msg.To)
 		if ok {
 			me := to.(*SocketManager)
 			me.writeChan <- struct{}{}
 			me.msg = msg
 			me.newMsg <- struct{}{}
-		} else {
-			updateUnread = true
-			updateUnreadUID = msg.To
-			updateUnreadGID = msg.To
 		}
 		return
 	}
 	if !IsInGroup(sm.uid, msg.To) {
 		sm.writeChan <- struct{}{}
 		sm.msg = models.NewNotifyMsg(models.UserNotInGroupMsg)
+		sm.msg.To = sm.uid
 		sm.newMsg <- struct{}{}
 		air.ERROR("not in specific group", utils.M{
 			"uid":      sm.uid,
@@ -79,16 +66,18 @@ func SendMsg(sm *SocketManager, msg *models.Message) {
 	// IsInGroup has already judge if group is nil
 	// so, here group can't be nil
 	for _, v := range strings.Split(group.UIDs, ";") {
+		tuid := v
 		if value, ok := users.Get(v); ok {
 			me := value.(*SocketManager)
 			me.writeChan <- struct{}{}
 			me.msg = msg
 			me.newMsg <- struct{}{}
-		} else {
-			updateUnread = true
-			updateUnreadUID = v
-			updateUnreadGID = msg.To
 		}
+		go func() {
+			if !inList(tuid, group.GID) {
+				UpdateListAdd(tuid, group.GID)
+			}
+		}()
 	}
 }
 
@@ -163,6 +152,9 @@ func socketHandler(req *air.Request, res *air.Response) error {
 							"err":     err,
 						})
 					me.Close()
+				}
+				if !inList(me.uid, me.msg.To) {
+					go UpdateListAdd(me.uid, me.msg.To)
 				}
 				<-me.writeChan
 			}

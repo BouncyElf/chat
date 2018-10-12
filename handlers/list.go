@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/BouncyElf/chat/gas"
@@ -17,7 +16,6 @@ func init() {
 		Gases:  []air.Gas{gas.Auth},
 	}
 	a.POST("/get", getListHandler)
-	a.POST("/update", updateListHandler)
 }
 
 func getListHandler(req *air.Request, res *air.Response) error {
@@ -27,50 +25,35 @@ func getListHandler(req *air.Request, res *air.Response) error {
 		models.NewList(uid).Save()
 		return utils.Success(res, "")
 	}
-	gids := []string{}
-	for _, gid := range strings.Split(list.GIDs, ";") {
-		gids = append(gids, gid)
+	groups := models.GetGroupsSlice(strings.Split(list.GIDs, ";"))
+	data := []interface{}{}
+	for _, group := range groups {
+		data = append(data, utils.M{
+			"gid":    group.GID,
+			"name":   group.Name,
+			"uids":   group.UIDs,
+			"type":   group.Type,
+			"unread": hasUnreadMsg(uid, group.GID),
+		})
 	}
-	return utils.Success(res, models.GetGroupsSlice(gids))
+	return utils.Success(res, data)
 }
 
-func updateListHandler(req *air.Request, res *air.Response) error {
-	uid := req.Params["uid"]
-	qtype := req.Params["qtype"]
-	gid := req.Params["gid"]
-	if models.GetGroup(gid) == nil {
-		air.ERROR("group not found", utils.M{
-			"gid": gid,
-			"uid": uid,
-		})
-		return utils.Error(404, fmt.Errorf("group not found: %s", gid))
+func inList(uid, gid string) bool {
+	list := models.GetList(uid)
+	if list == nil {
+		return false
 	}
+	return strings.Contains(list.GIDs, gid)
+}
+
+func UpdateListAdd(uid, gid string) {
 	list := models.GetList(uid)
 	if list == nil {
 		list = models.NewList(uid)
 	}
-	switch qtype {
-	case "add":
-		if !strings.Contains(list.GIDs, gid) {
-			list.GIDs = strings.Join(
-				[]string{list.GIDs, gid}, ";")
-		}
-		list.Save()
-		return utils.Success(res, "")
-	case "delete":
-		if strings.Contains(list.GIDs, gid) {
-			gids := strings.Split(list.GIDs, ";")
-			for k, v := range gids {
-				if v == gid {
-					gids = append(gids[:k], gids[k+1:]...)
-					break
-				}
-			}
-			list.GIDs = strings.Join(gids, ";")
-		}
-		list.Save()
-		return utils.Success(res, "")
+	if !strings.Contains(list.GIDs, gid) {
+		list.GIDs = strings.Join([]string{list.GIDs, gid}, ";")
 	}
-	return utils.Error(400,
-		fmt.Errorf("no specific query type: %s", qtype))
+	go list.Save()
 }

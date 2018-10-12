@@ -20,25 +20,20 @@ func updateUnreadHandler(req *air.Request, res *air.Response) error {
 	uid := req.Params["uid"]
 	gid := req.Params["gid"]
 	lastMID := req.Params["last_mid"]
-	if !hasUnreadMsg(uid, gid) {
-		updateUnreadMsg(uid, gid, lastMID)
-	}
+	updateUnreadMsg(uid, gid, lastMID)
 	return utils.Success(res, "")
 }
 
 func hasUnreadMsg(uid, gid string) bool {
-	unread := models.GetUnread(uid, gid)
-	if unread == nil {
-		return false
-	}
 	lastMsg := models.GetLastMsg(gid)
 	if lastMsg == nil {
 		return false
 	}
-	if unread.LastMID < lastMsg.MID {
+	unread := models.GetUnread(uid, gid)
+	if unread == nil {
 		return true
 	}
-	return false
+	return unread.LastMID != lastMsg.MID
 }
 
 func updateUnreadMsg(uid, gid, mid string) {

@@ -28,11 +28,17 @@ func newGroupHandler(req *air.Request, res *air.Response) error {
 	if groupName == "" {
 		groupName = common.DefaultGroupName
 	}
-	go models.NewGroup(
+	group := models.NewGroup(
 		strings.Split(tuids, ";"),
 		common.ChatTypeGroup,
 		groupName,
-	).Save()
+	)
+	group.Save()
+	for _, uid := range strings.Split(tuids, ";") {
+		if !inList(uid, group.GID) {
+			UpdateListAdd(uid, group.GID)
+		}
+	}
 	return utils.Success(res, "")
 }
 
@@ -86,12 +92,7 @@ func IsInGroup(uid string, gid string) bool {
 	if group == nil {
 		return false
 	}
-	for _, v := range strings.Split(group.UIDs, ";") {
-		if v == uid {
-			return true
-		}
-	}
-	return false
+	return strings.Contains(group.UIDs, uid)
 }
 
 func updateGroupNameHandler(req *air.Request, res *air.Response) error {

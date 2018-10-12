@@ -38,7 +38,7 @@ type Message struct {
 	FromName string `gorm:"column:from_name" json:"from_name"`
 
 	// gid or uid, when system notify `to` is uid
-	To      string `gorm:"column:to" json:"gid"`
+	To      string `gorm:"column:to" json:"to"`
 	Type    string `gorm:"column:type" json:"type"`
 	Content string `gorm:"column:content" json:"content"`
 	Time    string `gorm:"column:time" json:"time"`
@@ -91,7 +91,9 @@ func NewMsg(from, name string, t air.WebSocketMessageType, b []byte) *Message {
 }
 
 func NewNotifyMsg(msg Message) *Message {
-	msg.MID = common.NewSnowFlake()
+	if msg.MID == "" {
+		msg.MID = common.NewSnowFlake()
+	}
 	msg.Time = time.Now().Format("15:04:05")
 	msg.MType = air.WebSocketMessageTypeText
 	return &msg
@@ -102,7 +104,7 @@ func GetLastMsg(gid string) *Message {
 		return nil
 	}
 	res := &Message{}
-	err := DB.Where("to = ?", gid).Order("mid desc").Limit(1).
+	err := DB.Where("`to` = ?", gid).Order("mid desc").Limit(1).
 		Find(res).Error
 	if err != nil {
 		air.ERROR("get last message from db error", utils.M{
@@ -116,7 +118,7 @@ func GetLastMsg(gid string) *Message {
 
 func GetMessagesSlice(gid, minMID string, count int) []*Message {
 	msgs := []*Message{}
-	err := DB.Where("to = ? AND mid > ?", gid, minMID).Order("mid desc").
+	err := DB.Where("`to` = ? AND mid > ?", gid, minMID).Order("mid").
 		Limit(count).Find(&msgs).Error
 	if err != nil {
 		air.ERROR("get messages from db error", utils.M{
